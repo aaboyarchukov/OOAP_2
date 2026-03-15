@@ -7,11 +7,12 @@ class Document:
         print(f'подписан документ типа {self.type}')
 
 class Contract(Document):
-    def __init__(self, type, owner):
+    def __init__(self, type, owner, parties):
         super().__init__(type, owner)
+        self.parties = parties
     
     # наследник расширяет базовый класс родителя -> расширение класса-родителя
-    def stamp():
+    def stamp(self):
         print('согласовано - поставлена печать')
 
 class TaxBill(Document):
@@ -21,5 +22,5 @@ class TaxBill(Document):
     
     # наследник переопределяет родительский метод подписи, специализируя класс
     # -> специализация класса-родителя
-    def signature():
+    def signature(self):
         print('подписано электронной подписью')
