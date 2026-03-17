@@ -15,12 +15,26 @@ class Contract(Document):
     def stamp(self):
         print('согласовано - поставлена печать')
 
-class TaxBill(Document):
-    def __init__(self, type, owner, departament):
+# приложеие к трудовому-договору
+class Annex:
+    def __init__(self, benefits):
+        self.benefits = benefits
+
+# условия труда
+class WorkingConditions:
+    def __init__(self, salary, working_hours, operating_mode):
+        self.salary = salary
+        self.working_hours = working_hours
+        self.operating_mode = operating_mode
+
+# расширение: трудовой договор дополнен методом, приложением к договору и рабочими условиями
+# специализация: трудовой договор подтип контракта
+class EmploymentContract(Contract):
+    def __init__(self, type, owner, parties, conditions : WorkingConditions, annex : Annex):
         super().__init__(type, owner)
-        self.departament = departament
+        self.parties = parties
+        self.conditions = conditions
+        self.annex = annex
     
-    # наследник переопределяет родительский метод подписи, специализируя класс
-    # -> специализация класса-родителя
-    def signature(self):
-        print('подписано электронной подписью')
+    def stamp(self):
+        print('согласовано - поставлена печать')
