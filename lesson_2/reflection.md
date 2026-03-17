@@ -9,7 +9,7 @@
 В схеме выглядит вот так:
 
 
-![[inheritance_types_diagram.svg]]
+![inheritance_types_diagram.svg](https://github.com/aaboyarchukov/OOAP_2/blob/main/lesson_2/resources/inheritance_types_diagram.svg)
 ### Пример:
 
 В данном примере показываем комбинированный случай, когда мы и расширяем класс родителя и делаем его более специализированным.
