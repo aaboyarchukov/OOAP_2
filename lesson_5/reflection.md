@@ -163,3 +163,81 @@ func (a *App) Run() {
 
 Дженерик-пакет открыт и универсален, но его конкретные реализации закрыты — поддержка параметризации встроена в язык, и программист не управляет этим выбором динамически. Это прямое нарушение принципа открытости-закрытости: непонятно, как расширять такие шаблоны, не затрагивая уже использующий их код.
 
+### Рефлексия
+---
+
+Проанализировав эталонное решение понял, что я хорошо описал возможности языка Go по реализации 5 принципов.
+
+Вот пример внедрения новых модулей в проект при соблюдении максимального количества принципов:
+
+```go
+// пакет payment — принцип 2 (тесно связанные функции)
+package payment
+
+type Payment struct {
+    Amount   float64
+    Currency string
+    UserID   string
+}
+
+func (p *Payment) Process() error {
+    if err := p.validate(); err != nil {  // внутренняя функция
+        return err
+    }
+    if err := p.convert(); err != nil {   // внутренняя функция
+        return err
+    }
+    return p.execute()                    // внутренняя функция
+}
+
+func (p *Payment) validate() error { ... }
+func (p *Payment) convert() error { ... }
+func (p *Payment) execute() error { ... }
+```
+
+```go
+// пакет gateway — принцип 3 (семейство модулей)
+package gateway
+
+import "myapp/payment"
+
+type Gateway interface {
+    Send(p payment.Payment) error
+}
+```
+
+```go
+// пакет mir — конкретная реализация
+package mir
+
+type Gateway struct{ APIKey string }
+
+func (g *Gateway) Send(p payment.Payment) error { ... }
+```
+
+```go
+// пакет visa — ещё одна реализация
+package visa
+
+type Gateway struct{ APIKey string }
+
+func (g *Gateway) Send(p payment.Payment) error { ... }
+```
+
+```go
+// пакет service — принцип 5 (интеграция общего поведения)
+package service
+
+import (
+    "myapp/gateway"
+    "myapp/payment"
+)
+
+type PaymentService struct {
+    gateway gateway.Gateway  // не знает какая реализация
+}
+
+func (s *PaymentService) Execute(p payment.Payment) error {
+    return s.gateway.Send(p)
+}
+```
