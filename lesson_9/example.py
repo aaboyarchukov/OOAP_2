@@ -1,54 +1,65 @@
 from typing import TypeVar
 from copy import deepcopy
-import json
+import pickle
 
 T = TypeVar('T', covariant=True)
 
 # закрытый для изменений
 class General(object):
+    COPY_NIL = 0
+    COPY_OK = 1
+    COPY_ATTR_ERR = 0
 
+    def __get_status_fields(self) -> set:
+        fields = set(attr for attr in dir(self)
+                     if attr.endswith('status'))
+        return fields
+    
+    def __init__(self, *args, **kwargs):
+        self.copy_status = self.COPY_NIL
+
+    def __get_status_fields(self) -> set:
+        fields = set(attr for attr in dir(self)
+                     if attr.endswith('status'))
+        return fields
+    
     # обход всех аттрибутов внутри объекта и копирование их в текущий
     def copy(self, obj_from : T):
         if not (type(self) is type(obj_from)):
+            self.copy_status = self.COPY_ATTR_ERR
             return
         
-        attributes = vars(obj_from)
+        status_fields = self.__get_status_fields()
+        attributes = filter(lambda a: a not in status_fields,
+                            dir(self))
+        
+        if not all(hasattr(obj_from, attr) for attr in attributes):
+            self.copy_status = self.COPY_ATTR_ERR
+            return
+        
         for attr in attributes:
             target = getattr(obj_from, attr)
             setattr(self, attr, deepcopy(target))
+        
+        self.copy_status = self.COPY_OK
     
     # возвращает результат copy
     def clone(self, obj_from : T) -> T:
+        if self.copy_status != self.COPY_OK:
+            return
+        
         return self.copy(obj_from)
 
     def __eq__(self, target) -> bool:
-        if type(self) is type(target):
-            return False
-        
-        target_attributes = vars(target)
-         
-        for attr in target_attributes:
-            
-            target_val = getattr(target, attr)
-            self_val = getattr(self, attr)
-            
-            # сравнение будет корректно, так как
-            # я переопределяю именно метод __eq__,
-            # а значит он будет автоматически переопределен для потомков
-            if target_val != self_val:
-                return False
-            
-        return True
+        return self.__dict__ == target.__dict__
 
     # перевод аттрибутов в строку json
-    def serialize(self):
-        return json.dumps(vars(self))
+    def serialize(self) -> bytes:
+        return pickle.dumps(vars(self))
 
     # перевод из строки в аттрибуты текущего объекта
-    def deserialize(self, target_row : str):
-        target_dict : dict = json.loads(target_row)
-        for attr, value in target_dict.items():
-            setattr(self, attr, value)
+    def deserialize(self, target : bytes) -> T:
+        return pickle.loads(target)
 
     # вывод всех аттрибутов (лучше переопределить __str__, чем использовать print)
     def __str__(self):
