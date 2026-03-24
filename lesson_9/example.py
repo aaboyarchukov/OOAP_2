@@ -24,6 +24,7 @@ class General(object):
         return fields
     
     # обход всех аттрибутов внутри объекта и копирование их в текущий
+    @final
     def copy(self, obj_from : T):
         if not (type(self) is type(obj_from)):
             self.copy_status = self.COPY_ATTR_ERR
@@ -44,32 +45,38 @@ class General(object):
         self.copy_status = self.COPY_OK
     
     # возвращает результат copy
+    @final
     def clone(self, obj_from : T) -> T:
         if self.copy_status != self.COPY_OK:
             return
         
         return self.copy(obj_from)
-
+    @final
     def __eq__(self, target) -> bool:
         return self.__dict__ == target.__dict__
 
     # перевод аттрибутов в строку json
+    @final
     def serialize(self) -> bytes:
         return pickle.dumps(vars(self))
 
     # перевод из строки в аттрибуты текущего объекта
+    @final
     def deserialize(self, target : bytes) -> T:
         return pickle.loads(target)
 
     # вывод всех аттрибутов (лучше переопределить __str__, чем использовать print)
+    @final
     def __str__(self):
         print(
             str(vars(self))
         )
 
+    @final
     def check_type(self, target_type : T) -> bool:
         return type(self) is target_type
 
+    @final
     def type(self) -> T:
         return self.__class__
 
