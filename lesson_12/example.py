@@ -23,6 +23,7 @@ class General(object):
     def __init__(self, *args, **kwargs):
         self._copy_status = self.COPY_NIL
         self._assignment_status = self.ASSIGMENT_NIL
+        self._value = General()
 
     def __get_status_fields(self) -> set:
         fields = set(attr for attr in dir(self)
@@ -89,17 +90,20 @@ class General(object):
     def type(self) -> T:
         return self.__class__
     
-    def assignment_attempt(self, target : T, source : S):
-        if isinstance(type(source), target):
-            target = source
+    def assignment_attempt(self, source : S):
+        if isinstance(source, type(self)):
+            self._value = deepcopy(source)
             self._assignment_status = self.ASSIGMENT_OK
             return
         
-        target = Null()
+        self._value = Null()
         self._assignment_status = self.ASSIGMENT_MISS
     
     def get_assignment_attempt_status(self) -> int:
         return self._assignment_status
+    
+    def get_base_value(self):
+        return self._value
 
 # открытый для изменений
 class Any(General):
@@ -121,12 +125,11 @@ class ElectricBysicle(Bysicle):
     def drive(self):
         print("drive wit electricity engine!!!")
 
-vahicle1 = Vehicle(type="велик")
 bike1 = Bysicle(type="велик")
 bike2 = ElectricBysicle(type="электровелик")
 
-bike1.assignment_attempt(bike1, bike2)
-print(bike1._assignment_status)
+bike1.assignment_attempt(bike2)
+print(bike1.get_assignment_attempt_status())  # ASSIGNMENT_OK
 
-bike2.assignment_attempt(bike2, bike1)
-print(bike2.get_assignment_attempt_status())
+result = bike1.get_base_value()
+result.__str__()           # {'type': 'электровелик'}
