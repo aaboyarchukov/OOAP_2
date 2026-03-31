@@ -23,7 +23,7 @@ class General(object):
     def __init__(self, *args, **kwargs):
         self._copy_status = self.COPY_NIL
         self._assignment_status = self.ASSIGMENT_NIL
-        self._value = General()
+        self._value = Null()
 
     def __get_status_fields(self) -> set:
         fields = set(attr for attr in dir(self)
@@ -90,14 +90,15 @@ class General(object):
     def type(self) -> T:
         return self.__class__
     
-    def assignment_attempt(self, source : S):
-        if isinstance(source, type(self)):
-            self._value = deepcopy(source)
-            self._assignment_status = self.ASSIGMENT_OK
+    @classmethod
+    def assignment_attempt(cls, target : T, source : S):
+        if isinstance(source, type(target)):
+            target._value = source._value
+            target._assignment_status = cls.ASSIGMENT_OK
             return
         
-        self._value = Null()
-        self._assignment_status = self.ASSIGMENT_MISS
+        target._value = Null()
+        target._assignment_status = cls.ASSIGMENT_MISS
     
     def get_assignment_attempt_status(self) -> int:
         return self._assignment_status
@@ -115,21 +116,33 @@ class Null(General):
 
 class Vehicle(Any):
     def __init__(self, type: str):
+        super().__init__()
         self.type = type
 
 class Bysicle(Vehicle):
+    def __init__(self, type):
+        super().__init__(type)
+
     def drive(self):
         print("drive!!!")
 
 class ElectricBysicle(Bysicle):
+    def __init__(self, type):
+        super().__init__(type)
+
     def drive(self):
         print("drive wit electricity engine!!!")
 
+# тест
 bike1 = Bysicle(type="велик")
 bike2 = ElectricBysicle(type="электровелик")
 
-bike1.assignment_attempt(bike2)
-print(bike1.get_assignment_attempt_status())  # ASSIGNMENT_OK
+# ElectricBysicle потомок Bysicle — успех
+Bysicle.assignment_attempt(bike1, bike2)
+print(bike1.get_assignment_attempt_status())  # 1 — ASSIGNMENT_OK
+print(bike1.get_base_value())              # ElectricBysicle объект
 
-result = bike1.get_base_value()
-result.__str__()           # {'type': 'электровелик'}
+# Bysicle не потомок ElectricBysicle — неудача
+Bysicle.assignment_attempt(bike2, bike1)
+print(bike2.get_assignment_attempt_status())  # 2 — ASSIGNMENT_MISS
+print(bool(bike2.get_base_value()))        # False — Null
