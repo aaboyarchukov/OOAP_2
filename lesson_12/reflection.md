@@ -43,3 +43,59 @@ def assignment_attempt(self, source : S):
         self._assignment_status = self.ASSIGMENT_MISS
 # ...
 ```
+
+
+### Рефлексия
+---
+Эталонное решение:
+
+Python
+
+
+```python
+class Any(General):
+	@classmethod
+	def assignment_attempt(cls, target, source):
+		if isinstance(target, cls) and isinstance(source, cls):
+			target.value = source.value
+			return target
+		return Void
+```
+
+Java
+
+```java
+class General implements Serializable {
+
+    public static <TFrom extends Any, TTo extends Any>
+            TTo assignmentAttempt(TFrom from, TTo to) {
+
+        var classFrom = from.getType();
+        var classTo = to.getType();
+        if (classTo.isAssignableFrom(classFrom)) {
+            return (TTo) from;
+        }
+        return None;
+    }
+```
+
+Проанализировав эталонное решение, понял, допустил некоторые ошибки:
+- метод является не статическим
+- нет симметричного сравнения
+- метод является командой и ничего не возвращает (оставлю таким же)
+
+Решение после рефлексии:
+
+[example.py](https://github.com/aaboyarchukov/OOAP_2/blob/main/lesson_12/example.py)
+
+```python
+ @classmethod
+    def assignment_attempt(cls, target : T, source : S):
+        if isinstance(source, type(target)):
+            target._value = source._value
+            target._assignment_status = cls.ASSIGMENT_OK
+            return
+        
+        target._value = Null()
+        target._assignment_status = cls.ASSIGMENT_MISS
+```
