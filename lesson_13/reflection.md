@@ -73,3 +73,110 @@ public class A {
 public class B extends A {
 }
 ```
+
+### Рефлексия
+---
+Эталонное решение:
+
+```java
+class A extends Any {
+    private int a;
+    private int b;
+    private int c;
+    private int d;
+
+    //метод публичен в родительском классе А 
+    //и публичен в его потомке B;
+    public int getA() {
+        return this.a;
+    }
+
+    //метод скрыт в родительском классе А 
+    //и публичен в его потомке B;
+    protected int getB() {
+        return this.b;
+    }
+
+    //метод публичен в родительском классе А 
+    //и скрыт в его потомке B
+    // -- такая видимость методов в иерархии невозможна,
+    // так как в классах-наследниках доступ у метода 
+    //должны быть таким же или более слабым
+    public int getC() {
+        return this.c;
+    }
+
+    //метод скрыт в родительском классе А 
+    //и скрыт в его потомке B.
+    protected int getD() {
+        return this.d;
+    }
+}
+```
+
+```java
+class B extends A {
+
+    @Override
+    public int getA() {
+        return super.getA() + 1;
+    }
+
+    @Override
+    public int getB() {
+        return this.getB() + 2;
+    }
+
+    /*@Override
+    private int getC() {
+        return super.getC();
+    }*/
+
+    @Override
+    protected int getD() {
+        return super.getD() + 4;
+    }
+}
+```
+
+Проанализировав эталонное решение, понял, что допустил несколько ошибок:
+- В **Java** `protected` доступен для использования только в рамках одного пакета, в сторонних пакетах использовать нельзя
+- В **Python** можно использовать исключения и прокидывать ошибки (такой способ не брал во внимание)
+
+Решение после рефлексии:
+
+```java
+public class A {
+	// 1. метод публичен в родительском классе А и публичен в его потомке B.
+	public void method1() {}
+	
+	// 3. метод скрыт в родительском классе А и публичен в его потомке B.
+	protected void method3() {}
+	
+	// 2. метод публичен в родительском классе А и скрыт в его потомке B.
+	// нельзя, так как в java допустима только расширять область видимости
+	
+	// 4. метод скрыт в родительском классе А и скрыт в его потомке B.
+	protected void method4() {}
+}
+```
+
+```java
+public class B extends A {
+	// 1. метод публичен в родительском классе А и публичен в его потомке B.
+	@Override
+	public void method1() {}
+	
+	// 3. метод скрыт в родительском классе А и публичен в его потомке B.
+	@Override
+	public void method3() {
+		super.method3()
+	}
+	
+	// 4. метод скрыт в родительском классе А и скрыт в его потомке B.
+	@Override
+	protected void method4() {}
+	
+	
+}
+```
