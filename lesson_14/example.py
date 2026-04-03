@@ -1,6 +1,8 @@
-from typing import TypeVar, Self
+from typing import TypeVar, Self, Union
 from copy import deepcopy
 import pickle
+from itertools import starmap
+import operator
 
 T = TypeVar('T', covariant=True)
 S = TypeVar('S', covariant=True)
@@ -114,81 +116,63 @@ class Null(General):
     def __new__(self, *args, **kwargs):
         return None # переопределяем и делаем его закрытым и пустым, таким образом у нас при вызове методов будет возникать ошибка
 
-class Variant(Any):
-    @classmethod
-    def sum(cls, g1 : Any, g2 : Any) -> Self:
-        return g1 + g2
-
-class Vector[T : Variant](General):
-    def __init__(self, array : list[T], *args, **kwargs):
+class Vector(Any):
+    def __init__(self, *args : Any, **kwargs):
         super().__init__(*args, **kwargs)
-        self.array = array
+        self._size = len(args)
+        self.array = args
     
     # приципиально добавить переопрдееление этого метода, для дальнейшего вложенного сложения
     # без него будет вызов sum() у NoneType
-    def __add__(self, other: Self) -> Self:
-        return self.sum(other)
-    
-    def append(self, element : Variant):
-        self.array.append(element)
+    def __add__(self, other: Self) -> Union[Self, Null]:
+        try:
+            assert self._size == other._size
+        except AssertionError:
+            sum_vector = Null
+        else:
+            sum_vector = self.sum(other)
+
+        return sum_vector
 
     def sum(self, v : Self) -> Self:
-        if len(self.array) != len(v.array):
-            return Null()
-        
-        accum_array = []
-        result_vector = Vector(accum_array)
-
-        for indx, value in enumerate(v.array):
-            target_result = Variant.sum(value, self.array[indx])
-            result_vector.append(target_result)
+        items = starmap(operator.add, zip(self.array, v.array))
+        result_vector = Vector(*items)
 
         return result_vector
     
-    def to_list(self) -> list:
-        result = []
-        for item in self.array:
-            # Если элемент внутри тоже вектор — распаковываем его
-            if isinstance(item, Vector):
-                result.append(item.to_list())
-            else:
-                # Если это уже просто число/строка — добавляем как есть
-                result.append(item)
-        return result
     
-v1 = Vector[int]([1, 2, 3])
-v2 = Vector[int]([1, 2, 3])
+v1 = Vector(1, 2, 3)
+v2 = Vector(1, 2, 3)
 
-v_result = v1.sum(v2)
+v_result = v1 + v2
 print(v_result.array) # [2, 4, 6]
 
-v1 = Vector[str](["1", "2", "3"])
-v2 = Vector[str](["1", "2", "3"])
+v1 = Vector("1", "2", "3")
+v2 = Vector("1", "2", "3")
 
-v_result = v1.sum(v2)
+v_result = v1 + v2
 print(v_result.array) # ['11', '22', '33']
 
-v1 = Vector[Vector[Vector[int]]]([
-    Vector[Vector[int]] ([
-        Vector[int]([1, 1]),
-        Vector[int]([2, 2])
-    ])
-])
+v1 = Vector((
+        Vector(1, 1),
+        Vector(2, 2)
+    )
+)
 
-v2 = Vector[Vector[Vector[int]]]([
-    Vector[Vector[int]] ([
-        Vector[int]([5, 5]),
-        Vector[int]([10, 10])
-    ])
-])
+v2 = Vector((
+        Vector(5, 5),
+        Vector(10, 10)
+    )
+)
 
-v_result = v1.sum(v2)
-print(v_result.to_list()) # [[[6, 6], [12, 12]]]
+v_result = v1 + v2
+print(v_result.array)
+# [[[6, 6], [12, 12]]]
 
 
-v1 = Vector[str](["1", "2", "3"])
-v2 = Vector[str](["1", "2"])
+v1 = Vector("1", "2", "3")
+v2 = Vector("1", "2")
 
-v_result = v1.sum(v2)
-print(v_result.array) # Different size
+v_result = v1 + v2
+print(v_result is Null) # Different size
 
